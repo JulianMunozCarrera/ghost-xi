@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ghost XI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a night match. The pitch is the hero and takes the left two thirds.
+   Everything you read sits in a quiet column on the right. One world, dark only. */
+:root {
+  color-scheme: dark;
+  --night: #0c1322;        /* page background, the sky above the stadium */
+  --stand: #141d31;        /* panels */
+  --rail: #26324d;         /* borders */
+  --chalk: #eef3fb;        /* main text and pitch lines */
+  --mist: #9aa8c2;         /* secondary text */
+  --turf: #17402f;         /* pitch */
+  --turf-2: #1b4a36;       /* pitch stripe */
+  --real: #ff6b57;         /* real defenders */
+  --ghost: #dcecff;        /* ghost defenders */
+  --attack: #58a6ff;       /* attackers */
+  --ball: #ffe27a;
+  --display: "Big Shoulders Display", "Arial Narrow", Impact, sans-serif;
+  --body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--night);
+  color: var(--chalk);
+  font-family: var(--body);
+  font-size: 16px;
+  line-height: 1.55;
+}
+.wrap { max-width: 1180px; margin: 0 auto; padding: 28px 20px 64px; }
+
+header.top { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 28px; margin-bottom: 22px; }
+.mark {
+  font-family: var(--display); font-weight: 800; font-size: clamp(44px, 8vw, 84px);
+  line-height: 0.9; letter-spacing: 0.01em; text-transform: uppercase; margin: 0;
+}
+.mark span { color: transparent; -webkit-text-stroke: 2px var(--ghost); }
+.thesis { margin: 0; max-width: 46ch; color: var(--mist); font-size: 17px; }
+.thesis b { color: var(--chalk); font-weight: 600; }
+
+.stage { display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(280px, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 880px) { .stage { grid-template-columns: 1fr; } }
+
+.pitch-card { background: var(--stand); border: 1px solid var(--rail); border-radius: 14px; padding: 12px; }
+#pitch { display: block; width: 100%; border-radius: 8px; touch-action: manipulation; cursor: pointer; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; padding: 10px 4px 2px; font-size: 13.5px; color: var(--mist); }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+.legend .real i { background: var(--real); }
+.legend .ghost i { border: 2px solid var(--ghost); }
+.legend .attack i { background: var(--attack); }
+.legend .ball i { background: var(--ball); width: 9px; height: 9px; }
+
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 12px 4px 4px; }
+button {
+  font: inherit; color: var(--chalk); background: transparent; border: 1px solid var(--rail);
+  border-radius: 999px; padding: 7px 14px; cursor: pointer;
+}
+button:hover { border-color: var(--mist); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--ghost); outline-offset: 2px; }
+#play { background: var(--chalk); color: var(--night); border-color: var(--chalk); font-weight: 600; min-width: 92px; }
+#scrub { flex: 1 1 180px; accent-color: var(--real); min-width: 140px; }
+.clock { font-variant-numeric: tabular-nums; color: var(--mist); font-size: 14px; min-width: 132px; }
+.switch { display: inline-flex; border: 1px solid var(--rail); border-radius: 999px; overflow: hidden; }
+.switch button { border: 0; border-radius: 0; padding: 7px 13px; font-size: 14px; color: var(--mist); }
+.switch button[aria-pressed="true"] { background: var(--rail); color: var(--chalk); }
+
+.side { display: grid; gap: 16px; }
+.panel { background: var(--stand); border: 1px solid var(--rail); border-radius: 14px; padding: 16px; }
+.panel h2 {
+  font-family: var(--display); font-weight: 600; font-size: 21px; letter-spacing: 0.04em;
+  text-transform: uppercase; margin: 0 0 4px; text-wrap: balance;
+}
+.panel p.note { margin: 0 0 12px; color: var(--mist); font-size: 13.5px; }
+
+.goals { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; }
+.goals button { border-radius: 10px; text-align: left; padding: 8px 10px; line-height: 1.25; }
+.goals button b { display: block; font-family: var(--display); font-size: 20px; font-weight: 600; letter-spacing: 0.03em; }
+.goals button small { color: var(--mist); font-size: 12.5px; }
+.goals button[aria-pressed="true"] { border-color: var(--real); background: rgba(255, 107, 87, 0.1); }
+
+.rows { display: grid; gap: 5px; }
+.row {
+  display: grid; grid-template-columns: 30px 1fr 54px; align-items: center; gap: 10px;
+  padding: 3px 6px; border-radius: 8px; border: 1px solid transparent; text-align: left; width: 100%;
+}
+.row[aria-pressed="true"] { border-color: var(--ghost); }
+.row .num {
+  width: 26px; height: 26px; border-radius: 50%; background: var(--real); color: var(--night);
+  font-weight: 600; font-size: 13px; display: grid; place-items: center;
+}
+.row .track { height: 8px; background: var(--night); border-radius: 4px; overflow: hidden; }
+.row .fill { height: 100%; background: var(--ghost); border-radius: 4px; width: 0; }
+.row .val { font-variant-numeric: tabular-nums; text-align: right; font-size: 14px; }
+
+#danger { display: block; width: 100%; height: 130px; }
+.danger-now { display: flex; gap: 18px; font-size: 14px; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.danger-now b { font-family: var(--display); font-size: 24px; font-weight: 600; margin-right: 4px; }
+.danger-now .r b { color: var(--real); }
+.danger-now .g b { color: var(--ghost); }
+
+section.more { margin-top: 44px; display: grid; gap: 34px; }
+section.more h2 {
+  font-family: var(--display); font-weight: 800; font-size: 32px; letter-spacing: 0.02em;
+  text-transform: uppercase; margin: 0 0 10px; text-wrap: balance;
+}
+section.more p { max-width: 65ch; margin: 0 0 12px; }
+.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
+.steps div { border-top: 2px solid var(--rail); padding-top: 12px; }
+.steps h3 { font-family: var(--display); font-size: 20px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; margin: 0 0 4px; }
+.steps p { color: var(--mist); font-size: 15px; margin: 0; }
+
+.table-box { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; max-width: 640px; font-size: 15px; }
+th, td { text-align: right; padding: 8px 12px; border-bottom: 1px solid var(--rail); font-variant-numeric: tabular-nums; }
+th:first-child, td:first-child { text-align: left; }
+th { color: var(--mist); font-weight: 500; font-size: 13.5px; }
+tr.win td { color: var(--ghost); font-weight: 600; }
+
+.two { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 880px) { .two { grid-template-columns: 1fr; } }
+.two img { max-width: 100%; border-radius: 10px; border: 1px solid var(--rail); display: block; }
+.facts { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.facts li { display: flex; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--rail); padding-bottom: 8px; }
+.facts li b { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.honest li { margin-bottom: 8px; max-width: 65ch; }
+.honest { padding-left: 20px; margin: 0; }
+a { color: var(--ghost); }
+footer { margin-top: 40px; color: var(--mist); font-size: 13.5px; }
+@media (prefers-reduced-motion: reduce) { .row .fill { transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <h1 class="mark">Ghost <span>XI</span></h1>
+  <p class="thesis"><b>Where should the defenders have been?</b> Pick a real goal. The solid red players are where the defenders really were. The hollow ones are their ghosts: where a typical defender would have gone instead.</p>
+</header>
+
+<div class="stage">
+  <div class="pitch-card">
+    <canvas id="pitch" aria-label="Top down view of the pitch showing real defenders, ghost defenders, attackers and the ball"></canvas>
+    <div class="legend">
+      <span class="real"><i></i>Real defender</span>
+      <span class="ghost"><i></i>Ghost defender</span>
+      <span class="attack"><i></i>Attacker</span>
+      <span class="ball"><i></i>Ball</span>
+    </div>
+    <div class="controls">
+      <button id="play" type="button">Play</button>
+      <input id="scrub" type="range" min="0" max="100" step="0.01" value="0" aria-label="Time in the clip">
+      <span class="clock" id="clock"></span>
+      <span class="switch" role="group" aria-label="Ghost mode">
+        <button id="mode-team" type="button" aria-pressed="true" title="All eleven ghosts play together">Ghost team</button>
+        <button id="mode-solo" type="button" aria-pressed="false" title="Each ghost plays next to the real team mates">One at a time</button>
+      </span>
+    </div>
+  </div>
+
+  <div class="side">
+    <div class="panel">
+      <h2>Pick a goal</h2>
+      <p class="note" id="goal-note"></p>
+      <div class="goals" id="goals"></div>
+    </div>
+    <div class="panel">
+      <h2>Out of position</h2>
+      <p class="note">Metres between each defender and their ghost right now. Tap one to follow them.</p>
+      <div class="rows" id="rows"></div>
+    </div>
+    <div class="panel">
+      <h2>Danger near goal</h2>
+      <p class="note">If the ball dropped anywhere within 25 m of goal, how much of that area would the attackers reach first?</p>
+      <canvas id="danger" aria-label="Chart of danger over time for the real defence and the ghost defence"></canvas>
+      <div class="danger-now"><span class="r"><b id="d-real"></b>real defence</span><span class="g"><b id="d-ghost"></b>ghost defence</span></div>
+    </div>
+  </div>
+</div>
+
+<section class="more">
+  <div>
+    <h2>How it works</h2>
+    <div class="steps">
+      <div><h3>1. Watch real defending</h3><p>The model studied three full matches of tracking data: where all 22 players and the ball were, 5 times a second.</p></div>
+      <div><h3>2. Learn the habit</h3><p>For each defender it learns one thing: given the ball, the attackers and my team mates, how do I move in the next 0.2 seconds?</p></div>
+      <div><h3>3. Let the ghosts play</h3><p>Five seconds before a shot we swap in the ghosts. The attack plays out exactly as it really did. The ghosts move on their own.</p></div>
+    </div>
+  </div>
+
+  <div>
+    <h2>Does the ghost move like a real defender?</h2>
+    <p>Each match was tested with a model that never saw it. The table shows how far off each method is from where the real defenders went, in metres. Lower is better.</p>
+    <div class="table-box"><table id="scores"></table></div>
+    <p id="scores-note" style="color:var(--mist);font-size:14px;margin-top:10px"></p>
+  </div>
+
+  <div>
+    <h2>What the ghosts found</h2>
+    <p id="finding"></p>
+    <ul class="facts" id="finding-facts" style="max-width:640px"></ul>
+  </div>
+
+  <div>
+    <h2>From a TV picture to the pitch map</h2>
+    <div class="two">
+      <div><img id="tv" alt="A drawn TV style picture of a real goal, with players in red and blue on a green pitch"></div>
+      <div>
+        <p>Tracking data is expensive. So Ghost XI also has code that reads a TV style picture: it finds the camera angle from the white lines, finds the players by shirt colour, and places them on the map.</p>
+        <ul class="facts" id="vision-facts"></ul>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <h2>Read this before you trust it</h2>
+    <ul class="honest" id="honest"></ul>
+  </div>
+</section>
+
+<footer>
+  Match data: <a href="https://github.com/metrica-sports/sample-data">Metrica Sports open sample data</a>. Teams and players are anonymous.
+  Code: <a id="repo-link" href="https://github.com/JulianMunozCarrera/ghost-xi">github.com/JulianMunozCarrera/ghost-xi</a>. Built by Julian Munoz.
+</footer>
+</div>
+
+<script>
+const DATA = /*DATA*/null/*END*/;
+
+// ---------- small helpers ----------
+const $ = (id) => document.getElementById(id);
+const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const C = { chalk: css('--chalk'), mist: css('--mist'), turf: css('--turf'), turf2: css('--turf-2'),
+            real: css('--real'), ghost: css('--ghost'), attack: css('--attack'), ball: css('--ball'), night: css('--night'), rail: css('--rail') };
+const FPS = 5;                       // data frames per second
+const VIEW = { x0: -55, x1: 18, y0: -36.5, y1: 36.5 };   // the part of the pitch we show, in metres
+
+let goal = DATA.goals[0];
+let mode = 'team';                   // 'team' or 'solo'
+let time = 0;                        // position in the clip, in data frames (can be a fraction)
+let playing = false;
+let picked = null;                   // index of the defender being followed
+let lastTick = 0;
+
+// Positions are stored as whole numbers (metres x 10) to keep the page small.
+function at(list, t) {
+  const a = Math.min(Math.floor(t), list.length - 1), b = Math.min(a + 1, list.length - 1), f = t - a;
+  return list[a].map((p, i) => [(p[0] + (list[b][i][0] - p[0]) * f) / 10, (p[1] + (list[b][i][1] - p[1]) * f) / 10]);
+}
+function ballAt(t) {
+  const a = Math.min(Math.floor(t), goal.ball.length - 1), b = Math.min(a + 1, goal.ball.length - 1), f = t - a;
+  return [(goal.ball[a][0] + (goal.ball[b][0] - goal.ball[a][0]) * f) / 10, (goal.ball[a][1] + (goal.ball[b][1] - goal.ball[a][1]) * f) / 10];
+}
+const ghostsOf = () => (mode === 'team' ? goal.ghost_team : goal.ghost_solo);
+const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+
+// ---------- the pitch ----------
+const pitch = $('pitch'), ctx = pitch.getContext('2d');
+let scale = 1;
+function sizePitch() {
+  const w = pitch.clientWidth, ratio = (VIEW.y1 - VIEW.y0) / (VIEW.x1 - VIEW.x0);
+  const dpr = window.devicePixelRatio || 1;
+  pitch.style.height = Math.round(w * ratio) + 'px';
+  pitch.width = Math.round(w * dpr); pitch.height = Math.round(w * ratio * dpr);
+  scale = pitch.width / (VIEW.x1 - VIEW.x0);
+}
+const X = (x) => (x - VIEW.x0) * scale;
+const Y = (y) => (VIEW.y1 - y) * scale;      // y points up on a pitch but down on a screen
+
+function drawPitch() {
+  const L = 52.5, W = 34;
+  ctx.fillStyle = C.night; ctx.fillRect(0, 0, pitch.width, pitch.height);
+  for (let i = 0, x = -L; x < VIEW.x1; x += 5.25, i++) {         // mowing stripes
+    ctx.fillStyle = i % 2 ? C.turf : C.turf2;
+    ctx.fillRect(X(x), Y(W), 5.25 * scale + 1, 2 * W * scale);
+  }
+  ctx.strokeStyle = 'rgba(238,243,251,0.55)'; ctx.lineWidth = Math.max(1.5, 0.14 * scale); ctx.lineJoin = 'round';
+  const line = (pts) => { ctx.beginPath(); pts.forEach((p, i) => (i ? ctx.lineTo(X(p[0]), Y(p[1])) : ctx.moveTo(X(p[0]), Y(p[1])))); ctx.stroke(); };
+  line([[VIEW.x1, -W], [-L, -W], [-L, W], [VIEW.x1, W]]);
+  line([[0, -W], [0, W]]);
+  line([[-L, -20.16], [-36, -20.16], [-36, 20.16], [-L, 20.16]]);
+  line([[-L, -9.16], [-47, -9.16], [-47, 9.16], [-L, 9.16]]);
+  line([[-L, -3.66], [-54.3, -3.66], [-54.3, 3.66], [-L, 3.66]]);       // the goal
+  ctx.beginPath(); ctx.arc(X(0), Y(0), 9.15 * scale, 0, Math.PI * 2); ctx.stroke();
+  const reach = Math.acos(5.5 / 9.15);
+  ctx.beginPath(); ctx.arc(X(-41.5), Y(0), 9.15 * scale, -reach, reach); ctx.stroke();
+  ctx.fillStyle = 'rgba(238,243,251,0.55)';
+  ctx.beginPath(); ctx.arc(X(-41.5), Y(0), 0.25 * scale, 0, Math.PI * 2); ctx.fill();
+  // edge of the danger zone
+  ctx.save(); ctx.setLineDash([0.8 * scale, 0.8 * scale]); ctx.strokeStyle = 'rgba(255,107,87,0.35)';
+  ctx.beginPath(); ctx.arc(X(-L), Y(0), 25 * scale, -Math.PI / 2, Math.PI / 2); ctx.stroke(); ctx.restore();
+}
+
+function disc(p, r, fill, stroke, label, labelColour, dashed) {
+  ctx.beginPath(); ctx.arc(X(p[0]), Y(p[1]), r, 0, Math.PI * 2);
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  if (stroke) { ctx.save(); if (dashed) ctx.setLineDash([r * 0.5, r * 0.35]); ctx.strokeStyle = stroke; ctx.lineWidth = Math.max(1.5, r * 0.16); ctx.stroke(); ctx.restore(); }
+  if (label) {
+    ctx.fillStyle = labelColour; ctx.font = `600 ${Math.round(r * 1.05)}px ${css('--body')}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(label, X(p[0]), Y(p[1]) + r * 0.06);
+  }
+}
+
+function trail(list, i, upTo, colour, dashed) {
+  ctx.save(); ctx.strokeStyle = colour; ctx.lineWidth = Math.max(2, 0.3 * scale); ctx.globalAlpha = 0.7;
+  if (dashed) ctx.setLineDash([0.9 * scale, 0.7 * scale]);
+  ctx.beginPath();
+  for (let s = 0; s <= Math.floor(upTo); s++) { const p = list[s][i]; s ? ctx.lineTo(X(p[0] / 10), Y(p[1] / 10)) : ctx.moveTo(X(p[0] / 10), Y(p[1] / 10)); }
+  ctx.stroke(); ctx.restore();
+}
+
+function draw() {
+  drawPitch();
+  const real = at(goal.real, time), ghosts = at(ghostsOf(), time), attackers = at(goal.attackers, time), ball = ballAt(time);
+  const r = Math.max(7, 1.15 * scale);
+
+  if (picked !== null) { trail(goal.real, picked, time, C.real, false); trail(ghostsOf(), picked, time, C.ghost, true); }
+
+  // thin line from each defender to their ghost
+  ctx.strokeStyle = 'rgba(220,236,255,0.5)'; ctx.lineWidth = Math.max(1, 0.12 * scale);
+  real.forEach((p, i) => {
+    if (picked !== null && picked !== i) return;
+    ctx.beginPath(); ctx.moveTo(X(p[0]), Y(p[1])); ctx.lineTo(X(ghosts[i][0]), Y(ghosts[i][1])); ctx.stroke();
+  });
+
+  const faded = (i) => picked !== null && picked !== i;
+  ghosts.forEach((p, i) => { ctx.globalAlpha = faded(i) ? 0.25 : 1; disc(p, r, 'rgba(220,236,255,0.10)', C.ghost, goal.labels[i], C.ghost, true); });
+  ctx.globalAlpha = picked !== null ? 0.45 : 1;
+  attackers.forEach((p) => disc(p, r * 0.86, C.attack, 'rgba(12,19,34,0.6)'));
+  real.forEach((p, i) => { ctx.globalAlpha = faded(i) ? 0.3 : 1; disc(p, r, C.real, 'rgba(12,19,34,0.6)', goal.labels[i], C.night); });
+  ctx.globalAlpha = 1;
+  disc(ball, r * 0.42, C.ball, C.night);
+
+  if (time >= goal.shot_step) {      // mark the moment of the shot
+    ctx.fillStyle = C.chalk; ctx.font = `800 ${Math.round(2.6 * scale)}px ${css('--display')}`;
+    ctx.textAlign = 'right'; ctx.textBaseline = 'top'; ctx.fillText('SHOT', X(VIEW.x1) - scale, Y(VIEW.y1) + scale * 0.6);
+  }
+}
+
+// ---------- side panels ----------
+function gapsNow() {
+  const real = at(goal.real, time), ghosts = at(ghostsOf(), time);
+  return real.map((p, i) => dist(p, ghosts[i]));
+}
+
+function buildRows() {
+  const shotReal = at(goal.real, goal.shot_step), shotGhost = at(ghostsOf(), goal.shot_step);
+  const order = goal.labels.map((_, i) => i).sort((a, b) => dist(shotReal[b], shotGhost[b]) - dist(shotReal[a], shotGhost[a]));
+  const box = $('rows'); box.textContent = '';
+  order.forEach((i) => {
+    const row = document.createElement('button');
+    row.type = 'button'; row.className = 'row'; row.dataset.i = i; row.setAttribute('aria-pressed', picked === i);
+    row.innerHTML = `<span class="num">${goal.labels[i]}</span><span class="track"><span class="fill" style="display:block"></span></span><span class="val"></span>`;
+    row.addEventListener('click', () => { picked = picked === i ? null : i; buildRows(); refresh(); });
+    box.appendChild(row);
+  });
+}
+
+function refreshRows() {
+  const gaps = gapsNow();
+  document.querySelectorAll('#rows .row').forEach((row) => {
+    const g = gaps[+row.dataset.i];
+    row.querySelector('.fill').style.width = Math.min(100, (g / 12) * 100) + '%';
+    row.querySelector('.val').textContent = g.toFixed(1) + ' m';
+  });
+}
+
+const chart = $('danger'), cctx = chart.getContext('2d');
+function drawDanger() {
+  const dpr = window.devicePixelRatio || 1, w = chart.clientWidth, h = chart.clientHeight;
+  chart.width = w * dpr; chart.height = h * dpr; cctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const pad = { l: 34, r: 8, t: 8, b: 20 }, n = goal.danger_real.length;
+  const all = goal.danger_real.concat(goal.danger_ghost);
+  const lo = Math.floor(Math.min(...all) * 20) / 20, hi = Math.ceil(Math.max(...all) * 20) / 20 || 0.05;
+  const px = (s) => pad.l + (s / (n - 1)) * (w - pad.l - pad.r);
+  const py = (v) => pad.t + (1 - (v - lo) / (hi - lo || 1)) * (h - pad.t - pad.b);
+  cctx.clearRect(0, 0, w, h);
+  cctx.font = `12px ${css('--body')}`; cctx.fillStyle = C.mist; cctx.strokeStyle = C.rail; cctx.lineWidth = 1;
+  [lo, (lo + hi) / 2, hi].forEach((v) => {
+    cctx.beginPath(); cctx.moveTo(pad.l, py(v)); cctx.lineTo(w - pad.r, py(v)); cctx.stroke();
+    cctx.textAlign = 'right'; cctx.textBaseline = 'middle'; cctx.fillText(Math.round(v * 100) + '%', pad.l - 6, py(v));
+  });
+  cctx.textAlign = 'center'; cctx.textBaseline = 'bottom';
+  cctx.fillText('shot', px(goal.shot_step), h - 2);
+  cctx.setLineDash([3, 3]); cctx.beginPath(); cctx.moveTo(px(goal.shot_step), pad.t); cctx.lineTo(px(goal.shot_step), h - pad.b); cctx.stroke(); cctx.setLineDash([]);
+  const path = (vals, colour, dashed) => {
+    cctx.strokeStyle = colour; cctx.lineWidth = 2; cctx.setLineDash(dashed ? [5, 4] : []);
+    cctx.beginPath(); vals.forEach((v, s) => (s ? cctx.lineTo(px(s), py(v)) : cctx.moveTo(px(s), py(v)))); cctx.stroke(); cctx.setLineDash([]);
+  };
+  const ghostVals = mode === 'team' ? goal.danger_ghost : goal.danger_ghost;
+  path(ghostVals, C.ghost, true); path(goal.danger_real, C.real, false);
+  cctx.strokeStyle = C.chalk; cctx.lineWidth = 1; cctx.beginPath(); cctx.moveTo(px(time), pad.t); cctx.lineTo(px(time), h - pad.b); cctx.stroke();
+  const s = Math.min(Math.round(time), n - 1);
+  $('d-real').textContent = Math.round(goal.danger_real[s] * 100) + '%';
+  $('d-ghost').textContent = Math.round(goal.danger_ghost[s] * 100) + '%';
+}
+
+function refresh() {
+  draw(); refreshRows(); drawDanger();
+  $('scrub').value = time;
+  const secs = (time - goal.shot_step) / FPS;
+  $('clock').textContent = secs < 0 ? `${(-secs).toFixed(1)} s before the shot` : `${secs.toFixed(1)} s after the shot`;
+}
+
+function chooseGoal(index) {
+  goal = DATA.goals[index]; picked = null; playing = false; $('play').textContent = 'Play';
+  time = goal.shot_step; $('scrub').max = goal.real.length - 1;
+  document.querySelectorAll('#goals button').forEach((b, i) => b.setAttribute('aria-pressed', i === index));
+  $('goal-note').textContent = goal.note;
+  buildRows(); refresh();
+}
+
+function tick(now) {
+  if (!playing) return;
+  time += ((now - lastTick) / 1000) * FPS; lastTick = now;
+  if (time >= goal.real.length - 1) { time = goal.real.length - 1; playing = false; $('play').textContent = 'Replay'; }
+  refresh();
+  if (playing) requestAnimationFrame(tick);
+}
+
+$('play').addEventListener('click', () => {
+  if (playing) { playing = false; $('play').textContent = 'Play'; return; }
+  if (time >= goal.real.length - 1 || time === goal.shot_step) time = 0;
+  playing = true; $('play').textContent = 'Pause'; lastTick = performance.now(); requestAnimationFrame(tick);
+});
+$('scrub').addEventListener('input', (e) => { playing = false; $('play').textContent = 'Play'; time = +e.target.value; refresh(); });
+function setMode(m) {
+  mode = m; $('mode-team').setAttribute('aria-pressed', m === 'team'); $('mode-solo').setAttribute('aria-pressed', m === 'solo');
+  buildRows(); refresh();
+}
+$('mode-team').addEventListener('click', () => setMode('team'));
+$('mode-solo').addEventListener('click', () => setMode('solo'));
+
+// tap a defender on the pitch to follow them
+pitch.addEventListener('click', (e) => {
+  const box = pitch.getBoundingClientRect(), k = pitch.width / box.width;
+  const x = VIEW.x0 + ((e.clientX - box.left) * k) / scale, y = VIEW.y1 - ((e.clientY - box.top) * k) / scale;
+  const real = at(goal.real, time); let best = null, bestGap = 2.5;
+  real.forEach((p, i) => { const g = dist(p, [x, y]); if (g < bestGap) { best = i; bestGap = g; } });
+  picked = best === picked ? null : best; buildRows(); refresh();
+});
+
+// ---------- fill in the static parts ----------
+DATA.goals.forEach((g, i) => {
+  const b = document.createElement('button'); b.type = 'button';
+  b.innerHTML = `<b>${g.title}</b><small>${g.subtitle}</small>`;
+  b.addEventListener('click', () => chooseGoal(i)); $('goals').appendChild(b);
+});
+$('scores').innerHTML = '<tr><th>Method</th><th>After 1 s</th><th>After 3 s</th><th>After 5 s</th><th>Average</th></tr>' +
+  DATA.scores.map((r) => `<tr class="${r.win ? 'win' : ''}"><td>${r.name}</td><td>${r.at1}</td><td>${r.at3}</td><td>${r.at5}</td><td>${r.avg}</td></tr>`).join('');
+$('scores-note').textContent = DATA.scores_note;
+$('finding').textContent = DATA.finding;
+$('finding-facts').innerHTML = DATA.finding_facts.map((f) => `<li><span>${f[0]}</span><b>${f[1]}</b></li>`).join('');
+$('vision-facts').innerHTML = DATA.vision_facts.map((f) => `<li><span>${f[0]}</span><b>${f[1]}</b></li>`).join('');
+$('honest').innerHTML = DATA.honest.map((t) => `<li>${t}</li>`).join('');
+$('tv').src = DATA.tv_picture;
+
+window.addEventListener('resize', () => { sizePitch(); refresh(); });
+sizePitch(); chooseGoal(0);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(refresh);
+</script>
+</body>
+</html>

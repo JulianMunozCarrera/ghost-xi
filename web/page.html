@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ghost XI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Hanken+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* One world: a floodlit pitch at night. Ghosts are the only pale thing on it. */
+  --night: #08130f;       /* page */
+  --stand: #0e1d18;       /* panels */
+  --rail: #1d362d;        /* borders */
+  --turf: #16503a;        /* pitch */
+  --turf-2: #1a5a42;      /* pitch stripe */
+  --chalk: #f1f5ee;       /* lines and main text */
+  --mist: #9bb1a6;        /* quiet text */
+  --ghost: #d6fff0;       /* the ghosts */
+  --attack: #ef4f52;      /* attackers */
+  --defend: #10263f;      /* real defenders */
+  --alarm: #ffb224;       /* danger, out of position */
+  --display: "Big Shoulders Display", "Arial Narrow", Impact, sans-serif;
+  --body: "Hanken Grotesk", "Segoe UI", system-ui, sans-serif;
+  /* layout: one wide console (pitch + side panel), then plain reading columns */
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0; background: var(--night); color: var(--chalk);
+  font-family: var(--body); font-size: 16px; line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--ghost); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--ghost); outline-offset: 2px; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 20px; }
+
+.top { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 18px 0 6px; }
+.mark { font-family: var(--display); font-weight: 800; font-size: 30px; letter-spacing: .04em; line-height: 1; text-transform: uppercase; }
+.mark span { color: transparent; -webkit-text-stroke: 1.5px var(--ghost); text-shadow: 0 0 18px rgba(214,255,240,.35); margin-left: .18em; }
+.top nav { display: flex; gap: 18px; flex-wrap: wrap; font-size: 14px; }
+.top nav a { color: var(--mist); text-decoration: none; }
+.top nav a:hover { color: var(--chalk); }
+
+.lede { display: grid; gap: 8px; padding: 8px 0 16px; max-width: 860px; }
+h1 { font-family: var(--display); font-weight: 800; font-size: clamp(30px, 4.4vw, 48px); line-height: .98; margin: 0; text-transform: uppercase; letter-spacing: .01em; text-wrap: balance; }
+.lede p { margin: 0; color: var(--mist); font-size: 16px; max-width: 78ch; }
+.lede strong { color: var(--chalk); font-weight: 500; }
+
+.console { display: grid; grid-template-columns: minmax(0, 1fr) 318px; gap: 16px; align-items: start; }
+.pitch-box { position: relative; background: var(--stand); border: 1px solid var(--rail); border-radius: 10px; padding: 10px; }
+#pitch { display: block; width: 100%; border-radius: 6px; touch-action: none; cursor: grab; }
+#pitch.dragging { cursor: grabbing; }
+.badge { position: absolute; left: 20px; top: 20px; font-size: 12.5px; background: rgba(8,19,15,.78); border: 1px solid var(--rail); color: var(--mist); padding: 5px 9px; border-radius: 999px; pointer-events: none; }
+.badge b { color: var(--ghost); font-weight: 500; }
+
+.transport { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 4px 2px; }
+.play { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--ghost); background: transparent; color: var(--ghost); cursor: pointer; display: grid; place-items: center; }
+.play:hover { background: rgba(214,255,240,.1); }
+.play svg { width: 16px; height: 16px; fill: currentColor; }
+.scrub { position: relative; height: 34px; }
+.scrub input { position: absolute; inset: 0; width: 100%; margin: 0; appearance: none; -webkit-appearance: none; background: transparent; cursor: pointer; }
+.scrub input::-webkit-slider-runnable-track { height: 4px; background: var(--rail); border-radius: 2px; }
+.scrub input::-moz-range-track { height: 4px; background: var(--rail); border-radius: 2px; }
+.scrub input::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -6px; border-radius: 50%; background: var(--chalk); border: 0; }
+.scrub input::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--chalk); border: 0; }
+.tick { position: absolute; top: 2px; bottom: 2px; width: 2px; background: var(--alarm); pointer-events: none; }
+.tick.release { background: var(--ghost); opacity: .7; }
+.tick span { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--mist); white-space: nowrap; }
+.clock { font-family: var(--display); font-weight: 600; font-size: 22px; font-variant-numeric: tabular-nums; min-width: 132px; text-align: right; letter-spacing: .02em; }
+.clock small { font-family: var(--body); font-size: 12px; color: var(--mist); letter-spacing: 0; margin-left: 4px; }
+
+.panel { display: grid; gap: 12px; }
+.card { background: var(--stand); border: 1px solid var(--rail); border-radius: 10px; padding: 14px; display: grid; gap: 10px; }
+.card h2 { font-family: var(--body); font-size: 11.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--mist); margin: 0; }
+.pick { display: grid; grid-template-columns: 34px minmax(0, 1fr) 34px; gap: 6px; }
+.pick select, .pick button, .seg button, .ghostbtn {
+  font: inherit; color: var(--chalk); background: var(--night); border: 1px solid var(--rail); border-radius: 7px; min-height: 36px; cursor: pointer;
+}
+.pick select { padding: 0 8px; width: 100%; }
+.pick button { font-size: 16px; }
+.pick button:hover, .seg button:hover { border-color: var(--mist); }
+.note { margin: 0; font-size: 13px; color: var(--mist); }
+.note.warn { color: var(--alarm); }
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 6px; }
+.seg button { font-size: 13.5px; padding: 0 6px; }
+.seg button[aria-pressed="true"] { background: var(--ghost); color: #06231a; border-color: var(--ghost); font-weight: 700; }
+.row { display: grid; grid-template-columns: 78px minmax(0, 1fr); gap: 8px; align-items: center; font-size: 13px; color: var(--mist); }
+.key { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--mist); }
+.key i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+.key .a { background: var(--attack); }
+.key .d { background: var(--defend); box-shadow: inset 0 0 0 1.5px var(--chalk); }
+.key .g { box-shadow: inset 0 0 0 2px var(--ghost), 0 0 8px rgba(214,255,240,.7); }
+
+.meter { display: grid; gap: 6px; }
+.meter .line { display: grid; grid-template-columns: 74px minmax(0, 1fr) 46px; gap: 8px; align-items: center; font-size: 13px; }
+.meter .line span:first-child { color: var(--mist); }
+.bar { height: 10px; background: var(--night); border-radius: 5px; overflow: hidden; border: 1px solid var(--rail); }
+.bar i { display: block; height: 100%; width: 0; border-radius: 5px; transition: width .12s linear; }
+.bar .real { background: var(--alarm); }
+.bar .ghostfill { background: var(--ghost); }
+.num { font-family: var(--display); font-weight: 600; font-size: 19px; text-align: right; font-variant-numeric: tabular-nums; }
+.blame { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.blame li { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 14px; padding: 4px 6px; border-radius: 6px; cursor: default; }
+.blame li:hover { background: rgba(214,255,240,.07); }
+.blame .chip { width: 24px; height: 24px; border-radius: 50%; background: var(--defend); box-shadow: inset 0 0 0 1.5px var(--chalk); display: grid; place-items: center; font-size: 11px; font-weight: 700; }
+.blame .far { color: var(--alarm); }
+.ghostbtn { padding: 0 12px; font-size: 13.5px; justify-self: start; }
+.ghostbtn[hidden] { display: none; }
+
+section.read { padding: 56px 0 0; }
+section.read > h2 { font-family: var(--display); font-weight: 800; font-size: clamp(28px, 3.6vw, 40px); text-transform: uppercase; line-height: 1; margin: 0 0 6px; letter-spacing: .01em; text-wrap: balance; }
+section.read > p.sub { margin: 0 0 22px; color: var(--mist); max-width: 68ch; }
+.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; counter-reset: step; }
+.steps article { border-top: 2px solid var(--rail); padding-top: 12px; display: grid; gap: 6px; align-content: start; }
+.steps h3 { font-family: var(--display); font-weight: 800; font-size: 22px; text-transform: uppercase; margin: 0; letter-spacing: .02em; }
+.steps h3::before { counter-increment: step; content: counter(step); color: var(--ghost); margin-right: 10px; }
+.steps p { margin: 0; color: var(--mist); font-size: 15px; }
+.steps p b, .facts b, .limits b { color: var(--chalk); font-weight: 500; }
+
+.results { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+.figure { background: var(--stand); border: 1px solid var(--rail); border-radius: 10px; padding: 16px; }
+.figure h3 { margin: 0 0 2px; font-size: 15px; font-weight: 700; }
+.figure p { margin: 0 0 8px; font-size: 13px; color: var(--mist); }
+.figure svg { display: block; width: 100%; height: auto; }
+.facts { display: grid; gap: 14px; }
+.facts article { border-left: 2px solid var(--rail); padding-left: 14px; }
+.facts .big { font-family: var(--display); font-weight: 800; font-size: 34px; line-height: 1; font-variant-numeric: tabular-nums; }
+.facts .big em { font-style: normal; color: var(--ghost); }
+.facts p { margin: 4px 0 0; color: var(--mist); font-size: 14.5px; max-width: 46ch; }
+.tablebox { overflow-x: auto; margin-top: 22px; }
+table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 14.5px; }
+th, td { text-align: right; padding: 9px 10px; border-bottom: 1px solid var(--rail); font-variant-numeric: tabular-nums; }
+th:first-child, td:first-child { text-align: left; }
+th { color: var(--mist); font-weight: 500; font-size: 12.5px; letter-spacing: .04em; }
+td.hi { color: var(--ghost); font-weight: 700; }
+caption { caption-side: bottom; text-align: left; color: var(--mist); font-size: 13px; padding-top: 8px; }
+
+.limits { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 28px; padding: 0; margin: 0; list-style: none; }
+.limits li { border-top: 1px solid var(--rail); padding-top: 10px; color: var(--mist); font-size: 15px; }
+footer { margin-top: 64px; border-top: 1px solid var(--rail); padding: 22px 0 40px; color: var(--mist); font-size: 13.5px; display: grid; gap: 6px; }
+
+@media (max-width: 940px) {
+  .console { grid-template-columns: minmax(0, 1fr); }
+  .panel { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .results, .steps, .limits { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 620px) {
+  .panel { grid-template-columns: minmax(0, 1fr); }
+  .clock { min-width: 0; font-size: 18px; }
+  .clock small { display: none; }
+  .transport { grid-template-columns: auto minmax(0, 1fr); }
+  .clock { grid-column: 1 / -1; text-align: left; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .bar i { transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div class="mark">Ghost<span>XI</span></div>
+  <nav aria-label="Sections">
+    <a href="#how">How it works</a>
+    <a href="#results">Does it work?</a>
+    <a href="#limits">Limits</a>
+    <a href="https://github.com/JulianMunozCarrera/ghost-xi">Code on GitHub</a>
+  </nav>
+</header>
+
+<div class="lede">
+  <h1>Where should the defenders have been?</h1>
+  <p>Pick a goal. The solid dots are the real defenders. The pale rings are <strong>ghosts</strong>: where a model trained on pro matches expects defenders to stand. Drag the ball or any player and the ghosts move, because the model is running live in this page.</p>
+</div>
+
+<main>
+<div class="console" id="demo">
+  <div>
+    <div class="pitch-box">
+      <canvas id="pitch" aria-label="Pitch with attackers, real defenders and ghost defenders"></canvas>
+      <div class="badge" id="badge">Attack plays left to right</div>
+    </div>
+    <div class="transport">
+      <button class="play" id="play" aria-label="Play"><svg viewBox="0 0 16 16" id="playIcon"><path d="M3 1.5v13l11-6.5z"/></svg></button>
+      <div class="scrub">
+        <div class="tick release" id="tickRelease"><span>ghosts start</span></div>
+        <div class="tick" id="tickShot"><span>shot</span></div>
+        <input type="range" id="scrub" min="0" max="100" value="0" step="1" aria-label="Time in the clip">
+      </div>
+      <div class="clock" id="clock">0.0 s<small>to the shot</small></div>
+    </div>
+  </div>
+
+  <aside class="panel">
+    <div class="card">
+      <h2>Goal</h2>
+      <div class="pick">
+        <button id="prev" aria-label="Previous goal">&#8249;</button>
+        <select id="goal" aria-label="Choose a goal"></select>
+        <button id="next" aria-label="Next goal">&#8250;</button>
+      </div>
+      <p class="note" id="clipNote"></p>
+      <div class="key"><span><i class="a"></i>Attackers</span><span><i class="d"></i>Real defenders</span><span><i class="g"></i>Ghosts</span></div>
+    </div>
+
+    <div class="card">
+      <h2>What to draw</h2>
+      <div class="row"><span>Ghosts</span>
+        <div class="seg" id="modeSeg">
+          <button data-mode="team" aria-pressed="true">Whole unit</button>
+          <button data-mode="solo" aria-pressed="false">One by one</button>
+        </div>
+      </div>
+      <div class="row"><span>Space map</span>
+        <div class="seg" id="mapSeg">
+          <button data-map="off" aria-pressed="true">Off</button>
+          <button data-map="real" aria-pressed="false">Real</button>
+          <button data-map="ghost" aria-pressed="false">Ghost</button>
+        </div>
+      </div>
+      <p class="note" id="modeNote"></p>
+      <button class="ghostbtn" id="reset" hidden>Put everyone back</button>
+    </div>
+
+    <div class="card">
+      <h2>Space the attack would win in front of goal</h2>
+      <div class="meter">
+        <div class="line"><span>Real</span><div class="bar"><i class="real" id="barReal"></i></div><span class="num" id="numReal">0%</span></div>
+        <div class="line"><span>Ghost XI</span><div class="bar"><i class="ghostfill" id="barGhost"></i></div><span class="num" id="numGhost">0%</span></div>
+      </div>
+      <p class="note" id="dangerNote"></p>
+    </div>
+
+    <div class="card">
+      <h2>Furthest from his ghost</h2>
+      <ol class="blame" id="blame"></ol>
+      <p class="note">Each defender is judged on his own, with his teammates where they really were.</p>
+    </div>
+  </aside>
+</div>
+
+<section class="read" id="how">
+  <h2>How it works</h2>
+  <p class="sub">The idea comes from pro analytics, where it is called ghosting. Coaches use it to ask whether a goal was bad luck or bad positioning.</p>
+  <div class="steps">
+    <article><h3>Watch</h3><p>The model studied <b id="trainMoments">thousands of</b> moments from three pro matches. For each one it saw where the ball and every player was, <b>25 times a second</b>.</p></article>
+    <article><h3>Hide and guess</h3><p>In training we hide a defender and ask: he stood here a few seconds ago, the play went like this, where is he now? The model guesses. We show it the truth. Repeat <b id="trainSteps">many</b> times.</p></article>
+    <article><h3>Compare</h3><p>On a new goal, the guess is the <b>ghost</b>. A defender far from his ghost did something an average pro would not have done. That is where to look first.</p></article>
+  </div>
+</section>
+
+<section class="read" id="results">
+  <h2>Does it work?</h2>
+  <p class="sub">Every number below is from a match the model had never seen. With only three matches to learn from, that was done by training on two and testing on the third, three times over.</p>
+  <div class="results">
+    <div class="figure">
+      <h3>How far the ghost lands from where the real defender went</h3>
+      <p>Average miss in meters. Lower is better. Whole defense hidden.</p>
+      <svg id="chart" viewBox="0 0 560 330" role="img" aria-label="Line chart of average miss by seconds ahead"></svg>
+    </div>
+    <div class="facts" id="facts"></div>
+  </div>
+  <div class="tablebox">
+    <table id="groups"></table>
+  </div>
+</section>
+
+<section class="read" id="limits">
+  <h2>What it cannot do yet</h2>
+  <p class="sub">Read these before trusting a ghost.</p>
+  <ul class="limits">
+    <li><b>It learned from three matches.</b> That is very little. Clubs train this kind of model on hundreds. More data would make the ghosts sharper.</li>
+    <li><b>A ghost is the average pro, not the perfect one.</b> Far from the ghost means unusual. It does not always mean wrong. A press or an offside trap looks unusual too.</li>
+    <li><b>It was trained on open play.</b> Corners and free kicks are a different game. The page marks goals that start from a corner.</li>
+    <li><b>It does not find players in video.</b> The goals here were tracked from TV by someone else. My own camera stage is tested with a pretend camera, not real footage.</li>
+    <li><b>The TV tracking is rough.</b> Its makers say it was built for animations. Small distances in those clips mean little.</li>
+    <li><b>The danger score is simple.</b> It only asks who reaches each spot first. It knows nothing about the ball, passing lanes or who the striker is.</li>
+  </ul>
+</section>
+
+<footer>
+  <div>Data: <a href="https://github.com/metrica-sports/sample-data">Metrica Sports sample data</a> for training and testing. <a href="https://github.com/Friends-of-Tracking-Data-FoTD/Last-Row">Last Row</a> (Ricardo Tavares) for the 19 Liverpool goals tracked from TV.</div>
+  <div>Ideas: ghosting from Le, Carr, Yue and Lucey (2017). Space control from Spearman (2018).</div>
+  <div>Built by Julian Munoz. <span id="speedLine"></span></div>
+</footer>
+</main>
+</div>
+
+<script>/*__DATA__*/</script>
+<script>/*__ENGINE__*/</script>
+<script>/*__APP__*/</script>
+</body>
+</html>
