@@ -6,6 +6,15 @@ Ghost XI answers that with "ghosts". A ghost is where a typical pro defender wou
 
 Pro clubs call this ghosting. I love soccer, so I wanted to build it myself.
 
+[![The Ghost XI demo: real defenders as numbered dots, their ghosts as pale rings](docs/screenshot.png)](https://julianmunozcarrera.github.io/ghost-xi/)
+
+## In short
+
+- **3.5 m.** How far the ghost lands from the real defender, guessing 5 seconds ahead. The best simple rule misses by 8.1 m.
+- **23 matches.** 20 of them tracked from the normal TV broadcast, where about 14 of 22 players are on screen.
+- **4 ms.** One run of the model. It is small enough to run live in a web page.
+- **One honest surprise.** Being far from your ghost does not predict goals. Details below.
+
 ## Try it
 
 **[Open the live demo](https://julianmunozcarrera.github.io/ghost-xi/)**
