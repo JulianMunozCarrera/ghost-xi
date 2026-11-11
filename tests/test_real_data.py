@@ -61,7 +61,7 @@ def test_tv_tracked_matches_load_cleanly():
         live = match.possession >= 0
         assert live.sum() > 20 * 60 * match.fps                     # more than 20 minutes of live play
         on_screen = match.seen[live].sum(axis=(1, 2)).mean()
-        assert 8 < on_screen < 20                                   # a TV camera shows about 13 of 22 players
+        assert 8 < on_screen < 20                                   # a TV camera shows about 14 of 22 players
         assert not match.seen[np.isnan(match.xy[..., 0])].any()     # nobody is "seen" without a position
         assert len(match.shots) >= 10
         for shot in match.shots:

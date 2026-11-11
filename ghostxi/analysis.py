@@ -1,89 +1,72 @@
 """
-Looks at a shot or goal and asks: were the defenders where a typical
-defender would have been?
+Looks at one shot and asks: were the defenders where typical defenders
+would have been?
 
-For the 5 seconds before the shot we let ghost defenders play in place
-of the real ones. Then we compare:
+The ghosts set off from where the real defenders stood 8 seconds before
+the shot. At the moment of the shot we compare:
 
-  - gap:    how far each real defender was from their ghost (metres)
-  - danger: how much of the area near goal the attackers controlled,
-            with the real defence and with the ghost defence
+  off_by:  how far each real defender is from his own solo ghost (meters)
+  danger:  how much of the space in front of goal the attackers would
+           win, with the real defense and with the ghost defense
+  space:   how far the nearest outfield defender is from the ball
+
+TV footage does not show everyone. A defender can only be compared if
+he was on screen at the start (so his ghost has a starting spot) and is
+on screen at the shot (so we know where he really was).
 """
 
 import numpy as np
 
-from .control import attack_share, danger_zone
-from .data import FPS, STEP, view_for_defence
-from .model import ghost_paths
+from .danger import danger, space
+from .ghost import make_ghosts, ghost_speed
 
-BEFORE = 5.0   # seconds of play before the shot
-AFTER = 1.0    # seconds after the shot, so you can see where the ball goes
+LOOK_BACK = 8.0   # seconds before the shot where the ghosts set off
 
 
-def clip_around_shot(match, shot):
+def start_frame(clip):
+    """The frame where the ghosts set off: 8 seconds before the shot, or the start of the clip."""
+    return max(0, clip.shot_frame - int(LOOK_BACK * clip.fps))
+
+
+def ghost_defense(clip, ghosts, frame, speeds):
     """
-    Cut out the play around a shot, seen from the defending team's side.
-    If the ball was out of play less than 5 s before (a corner, say),
-    the clip starts when play restarted. Returns (spell, index of the
-    shot frame inside the spell), or (None, None) if there is under 2 s.
+    The defense at one frame with the ghosts swapped in.
+
+    A defender stands on his ghost if he has one and is on screen now.
+    A defender with no ghost stays where he really is.
+    A defender who is off screen now is in neither defense (NaN).
+
+    Returns (positions, speeds, swapped). swapped says who was replaced.
     """
-    defending = "away" if shot["team"] == "home" else "home"
-    last = min(shot["frame"] + int(AFTER * FPS), len(match.ball) - 1)
-    while last > shot["frame"] and np.isnan(match.ball[last, 0]):
-        last -= 1
-    first = shot["frame"] - int(BEFORE * FPS) - 1   # one extra frame to measure starting speeds
-    while first <= shot["frame"] - 2 * FPS:
-        frames = np.arange(first, last + 1)
-        spell = view_for_defence(match, defending, frames)
-        if spell is not None and not np.isnan(spell.ball).any():
-            return spell, shot["frame"] - first
-        first += 1
-    return None, None
+    real = clip.defenders[frame]
+    swapped = ~np.isnan(real).any(axis=1) & ~np.isnan(ghosts[frame]).any(axis=1)
+    spots = np.where(swapped[:, None], ghosts[frame], real)
+    moving = np.where(swapped[:, None], ghost_speed(ghosts, frame, clip.fps), speeds["def"][frame])
+    return spots, moving, swapped
 
 
-def as_batch(spell):
-    """Wrap one spell as a batch of one clip, the shape the model expects."""
+def analyse_shot(model, clip):
+    """Run the ghosts on one clip and measure everything at the moment of the shot."""
+    start, shot = start_frame(clip), clip.shot_frame
+    speeds = clip.speeds()
+    half_second = max(1, round(0.5 * clip.fps))
+
+    # Solo ghosts tell us how far each defender is from where he "should" be.
+    solo = make_ghosts(model, clip, start, solo=True, only_frames=[shot])
+    off_by = np.linalg.norm(clip.defenders[shot] - solo[shot], axis=-1)   # NaN where we cannot compare
+
+    # The team of ghosts tells us if a typical defense would have been safer.
+    # We also need them half a second earlier, to know how fast they are moving.
+    team = make_ghosts(model, clip, start, solo=False, only_frames=[shot - half_second, shot])
+    spots, moving, swapped = ghost_defense(clip, team, shot, speeds)
+
+    attackers, attacker_speeds = clip.attackers[shot], speeds["att"][shot]
     return {
-        "defenders": spell.defenders[None], "attackers": spell.attackers[None], "ball": spell.ball[None],
-        "defender_on": spell.defender_on[None], "attacker_on": spell.attacker_on[None], "keeper": spell.keeper[None],
-    }
-
-
-def study(spell, shot_index, net):
-    """
-    Run the ghosts on one clip and measure everything.
-
-    Returns a dict. Paths start at frame 1 of the spell (frame 0 is only
-    there to measure speeds), so 'shot_step' is shot_index - 1.
-    """
-    batch = as_batch(spell)
-    team_ghosts = ghost_paths(net, batch)[0]             # all eleven ghosts playing together
-    solo_ghosts = ghost_paths(net, batch, solo=True)[0]  # each ghost next to the real team mates
-    real = spell.defenders[1:]
-    attackers = spell.attackers[1:]
-    on, att_on = spell.defender_on, spell.attacker_on
-    shot_step = shot_index - 1
-
-    def speeds(path, before):
-        return np.diff(np.concatenate([before[None], path]), axis=0) / STEP
-
-    real_speed = speeds(real, spell.defenders[0])
-    attacker_speed = speeds(attackers, spell.attackers[0])
-    ghost_speed = speeds(team_ghosts, spell.defenders[0])
-
-    spots, weights = danger_zone()
-    danger_real, danger_ghost = [], []
-    for t in range(len(real)):
-        danger_real.append(attack_share(real[t][on], real_speed[t][on], attackers[t][att_on], attacker_speed[t][att_on], spots, weights))
-        danger_ghost.append(attack_share(team_ghosts[t][on], ghost_speed[t][on], attackers[t][att_on], attacker_speed[t][att_on], spots, weights))
-
-    gap = np.linalg.norm(solo_ghosts - real, axis=-1)   # (steps, 11) metres between each defender and their ghost
-    return {
-        "real": real, "team_ghosts": team_ghosts, "solo_ghosts": solo_ghosts,
-        "attackers": attackers, "ball": spell.ball[1:],
-        "defender_on": on, "attacker_on": att_on, "keeper": spell.keeper,
-        "shot_step": shot_step,
-        "gap": gap,
-        "gap_at_shot": gap[shot_step],
-        "danger_real": np.array(danger_real), "danger_ghost": np.array(danger_ghost),
+        "seconds": (shot - start) / clip.fps,
+        "compared": int(np.isfinite(off_by).sum()),
+        "off_by": [float(v) for v in off_by],
+        "danger_real": danger(attackers, attacker_speeds, clip.defenders[shot], speeds["def"][shot]),
+        "danger_ghost": danger(attackers, attacker_speeds, spots, moving),
+        "space_real": space(clip.ball[shot], clip.defenders[shot], clip.def_keeper),
+        "space_ghost": space(clip.ball[shot], spots, clip.def_keeper),
     }

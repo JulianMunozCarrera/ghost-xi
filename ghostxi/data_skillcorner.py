@@ -7,7 +7,7 @@ tracks players from the normal TV broadcast. So this is what real
 "tracking from TV footage" looks like:
 
   - 10 frames per second.
-  - The camera only shows part of the pitch. On average about 13 of the
+  - The camera only shows part of the pitch. On average about 14 of the
     22 players are on screen. For the rest, SkillCorner fills in a guess
     and marks it "is_detected: false".
   - During replays and close-ups nobody is on screen at all.

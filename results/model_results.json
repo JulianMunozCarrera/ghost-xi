@@ -1,0 +1,269 @@
+{
+  "matches": 23,
+  "stadium_matches": 3,
+  "tv_matches": 20,
+  "minutes_of_live_play": 1213,
+  "moments": 345504,
+  "steps": 8000,
+  "batch": 256,
+  "rounds_done": 4,
+  "parameters": 102082,
+  "tested_in_round": {
+    "Metrica sample match 1": 1,
+    "Metrica sample match 2": 2,
+    "Metrica sample match 3": 3,
+    "A-League 2024-11-23 Brisbane FC 2-3 Adelaide United": 4,
+    "A-League 2024-11-30 Auckland FC 2-0 Newcastle": 3,
+    "A-League 2024-12-07 Auckland FC 2-1 Wellington P FC": 2,
+    "A-League 2024-12-21 Brisbane FC 0-1 Perth Glory": 1,
+    "A-League 2024-12-22 Western Sydney 4-1 Wellington P FC": 4,
+    "A-League 2024-12-31 CC Mariners 1-1 Melbourne City": 3,
+    "A-League 2025-01-10 Melbourne V FC 3-4 Western United": 2,
+    "A-League 2025-01-26 Western Sydney 0-1 Auckland FC": 1,
+    "A-League 2025-02-01 Auckland FC 2-1 Macarthur FC": 4,
+    "A-League 2025-02-01 Sydney FC 4-1 Adelaide United": 3,
+    "A-League 2025-03-07 Melbourne City 2-0 Macarthur FC": 2,
+    "A-League 2025-03-08 Melbourne V FC 3-0 CC Mariners": 1,
+    "A-League 2025-03-15 Perth Glory 1-3 Brisbane FC": 4,
+    "A-League 2025-03-16 Auckland FC 2-2 CC Mariners": 3,
+    "A-League 2025-04-05 Melbourne City 1-0 CC Mariners": 2,
+    "A-League 2025-04-12 Wellington P FC 2-3 Melbourne V FC": 1,
+    "A-League 2025-04-27 Western United 1-0 Sydney FC": 4,
+    "A-League 2025-05-03 Western United 4-2 Auckland FC": 3,
+    "A-League 2025-05-09 Western United 3-2 Adelaide United": 2,
+    "A-League 2025-05-17 Melbourne V FC 0-1 Auckland FC": 1
+  },
+  "average": {
+    "1": {
+      "one_hidden": {
+        "model": 0.496,
+        "stand_still": 2.667,
+        "follow_ball": 2.621,
+        "copy_teammates": 1.597,
+        "defenders_checked": 110705
+      },
+      "all_hidden": {
+        "model": 0.488,
+        "stand_still": 2.562,
+        "follow_ball": 2.57,
+        "defenders_checked": 862512
+      }
+    },
+    "2": {
+      "one_hidden": {
+        "model": 1.382,
+        "stand_still": 5.192,
+        "follow_ball": 4.63,
+        "copy_teammates": 3.012,
+        "defenders_checked": 105896
+      },
+      "all_hidden": {
+        "model": 1.352,
+        "stand_still": 4.956,
+        "follow_ball": 4.503,
+        "defenders_checked": 796271
+      }
+    },
+    "3": {
+      "one_hidden": {
+        "model": 2.243,
+        "stand_still": 7.495,
+        "follow_ball": 6.191,
+        "copy_teammates": 4.203,
+        "defenders_checked": 101388
+      },
+      "all_hidden": {
+        "model": 2.197,
+        "stand_still": 7.106,
+        "follow_ball": 5.978,
+        "defenders_checked": 741857
+      }
+    },
+    "5": {
+      "one_hidden": {
+        "model": 3.536,
+        "stand_still": 11.363,
+        "follow_ball": 8.456,
+        "copy_teammates": 5.903,
+        "defenders_checked": 93430
+      },
+      "all_hidden": {
+        "model": 3.472,
+        "stand_still": 10.692,
+        "follow_ball": 8.128,
+        "defenders_checked": 656008
+      }
+    },
+    "8": {
+      "one_hidden": {
+        "model": 4.708,
+        "stand_still": 15.655,
+        "follow_ball": 10.658,
+        "copy_teammates": 7.52,
+        "defenders_checked": 83556
+      },
+      "all_hidden": {
+        "model": 4.615,
+        "stand_still": 14.607,
+        "follow_ball": 10.23,
+        "defenders_checked": 564008
+      }
+    }
+  },
+  "by_source": {
+    "stadium_tracking": {
+      "1": {
+        "one_hidden": {
+          "model": 0.447,
+          "stand_still": 2.232,
+          "follow_ball": 2.512,
+          "copy_teammates": 1.46,
+          "defenders_checked": 17145
+        },
+        "all_hidden": {
+          "model": 0.449,
+          "stand_still": 2.242,
+          "follow_ball": 2.519,
+          "defenders_checked": 188595
+        }
+      },
+      "2": {
+        "one_hidden": {
+          "model": 1.239,
+          "stand_still": 4.351,
+          "follow_ball": 4.405,
+          "copy_teammates": 2.785,
+          "defenders_checked": 16400
+        },
+        "all_hidden": {
+          "model": 1.238,
+          "stand_still": 4.366,
+          "follow_ball": 4.402,
+          "defenders_checked": 180400
+        }
+      },
+      "3": {
+        "one_hidden": {
+          "model": 2.002,
+          "stand_still": 6.308,
+          "follow_ball": 5.85,
+          "copy_teammates": 3.892,
+          "defenders_checked": 15698
+        },
+        "all_hidden": {
+          "model": 2.037,
+          "stand_still": 6.304,
+          "follow_ball": 5.847,
+          "defenders_checked": 172678
+        }
+      },
+      "5": {
+        "one_hidden": {
+          "model": 3.241,
+          "stand_still": 9.597,
+          "follow_ball": 7.975,
+          "copy_teammates": 5.589,
+          "defenders_checked": 14395
+        },
+        "all_hidden": {
+          "model": 3.31,
+          "stand_still": 9.587,
+          "follow_ball": 7.954,
+          "defenders_checked": 158345
+        }
+      },
+      "8": {
+        "one_hidden": {
+          "model": 4.416,
+          "stand_still": 13.211,
+          "follow_ball": 9.975,
+          "copy_teammates": 7.205,
+          "defenders_checked": 12657
+        },
+        "all_hidden": {
+          "model": 4.537,
+          "stand_still": 13.264,
+          "follow_ball": 10.0,
+          "defenders_checked": 139227
+        }
+      }
+    },
+    "tv_tracking": {
+      "1": {
+        "one_hidden": {
+          "model": 0.505,
+          "stand_still": 2.747,
+          "follow_ball": 2.641,
+          "copy_teammates": 1.622,
+          "defenders_checked": 93560
+        },
+        "all_hidden": {
+          "model": 0.499,
+          "stand_still": 2.651,
+          "follow_ball": 2.584,
+          "defenders_checked": 673917
+        }
+      },
+      "2": {
+        "one_hidden": {
+          "model": 1.408,
+          "stand_still": 5.346,
+          "follow_ball": 4.671,
+          "copy_teammates": 3.053,
+          "defenders_checked": 89496
+        },
+        "all_hidden": {
+          "model": 1.385,
+          "stand_still": 5.129,
+          "follow_ball": 4.533,
+          "defenders_checked": 615871
+        }
+      },
+      "3": {
+        "one_hidden": {
+          "model": 2.287,
+          "stand_still": 7.712,
+          "follow_ball": 6.254,
+          "copy_teammates": 4.26,
+          "defenders_checked": 85690
+        },
+        "all_hidden": {
+          "model": 2.246,
+          "stand_still": 7.349,
+          "follow_ball": 6.019,
+          "defenders_checked": 569179
+        }
+      },
+      "5": {
+        "one_hidden": {
+          "model": 3.59,
+          "stand_still": 11.685,
+          "follow_ball": 8.543,
+          "copy_teammates": 5.961,
+          "defenders_checked": 79035
+        },
+        "all_hidden": {
+          "model": 3.524,
+          "stand_still": 11.044,
+          "follow_ball": 8.184,
+          "defenders_checked": 497663
+        }
+      },
+      "8": {
+        "one_hidden": {
+          "model": 4.76,
+          "stand_still": 16.091,
+          "follow_ball": 10.78,
+          "copy_teammates": 7.576,
+          "defenders_checked": 70899
+        },
+        "all_hidden": {
+          "model": 4.64,
+          "stand_still": 15.047,
+          "follow_ball": 10.306,
+          "defenders_checked": 424781
+        }
+      }
+    }
+  }
+}

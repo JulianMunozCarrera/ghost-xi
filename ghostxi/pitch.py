@@ -1,7 +1,7 @@
 """
-The size of the pitch and the lines painted on it.
+The size of the pitch, and a helper to turn positions into speeds.
 
-We measure everything in metres, with (0, 0) at the centre spot.
+We measure everything in meters, with (0, 0) at the center spot.
 x runs along the length of the pitch (goal to goal).
 y runs across the width (touchline to touchline).
 """
@@ -12,42 +12,48 @@ LENGTH = 105.0   # goal line to goal line
 WIDTH = 68.0     # touchline to touchline
 HALF_LENGTH = LENGTH / 2
 HALF_WIDTH = WIDTH / 2
-
 GOAL_WIDTH = 7.32
-PENALTY_BOX_DEPTH = 16.5
-PENALTY_BOX_WIDTH = 40.32
-SIX_YARD_DEPTH = 5.5
-SIX_YARD_WIDTH = 18.32
-CENTRE_CIRCLE = 9.15
-PENALTY_SPOT = 11.0
 
-# In this project the defending team always defends the LEFT goal.
-OWN_GOAL = np.array([-HALF_LENGTH, 0.0])
+MAX_PLAYERS = 11   # players per team on the pitch
 
 
-def pitch_lines():
+def speed_from_positions(xy, fps, reach=None, top_speed=12.0):
     """
-    Every white line on the pitch as a list of point paths.
-    Each path is a list of (x, y) points to join up.
-    Used to draw the pitch and to find the camera position from video.
+    How fast something moves at every frame, in meters per second.
+
+    xy has frames along its first axis and (x, y) along its last.
+    For each frame we compare the position a few frames ahead with the
+    position a few frames back. 'reach' is how many frames that is.
+
+    Players can be missing (NaN). If one side is missing we use the
+    other side. If we cannot tell, the speed is 0. Nobody runs faster
+    than top_speed, so anything above that is a tracking glitch and
+    gets capped.
+
+    The website does the exact same steps in JavaScript (web/engine.js).
     """
-    L, W = HALF_LENGTH, HALF_WIDTH
-    lines = [
-        [(-L, -W), (L, -W), (L, W), (-L, W), (-L, -W)],   # outside edge
-        [(0, -W), (0, W)],                                # halfway line
-    ]
-    for side in (-1, 1):  # left goal, then right goal
-        goal_x = side * L
-        for depth, width in ((PENALTY_BOX_DEPTH, PENALTY_BOX_WIDTH), (SIX_YARD_DEPTH, SIX_YARD_WIDTH)):
-            inner_x = goal_x - side * depth
-            lines.append([(goal_x, -width / 2), (inner_x, -width / 2), (inner_x, width / 2), (goal_x, width / 2)])
+    xy = np.asarray(xy, dtype=np.float32)
+    if reach is None:
+        reach = max(1, round(0.12 * fps))
+    ahead = np.full_like(xy, np.nan)
+    back = np.full_like(xy, np.nan)
+    ahead[:-reach] = xy[reach:]
+    back[reach:] = xy[:-reach]
 
-        # The curved bit on the edge of the penalty box (the "D").
-        spot_x = goal_x - side * PENALTY_SPOT
-        reach = np.arccos((PENALTY_BOX_DEPTH - PENALTY_SPOT) / CENTRE_CIRCLE)
-        angles = np.linspace(-reach, reach, 20)
-        lines.append([(spot_x - side * CENTRE_CIRCLE * np.cos(a), CENTRE_CIRCLE * np.sin(a)) for a in angles])
+    here = ~np.isnan(xy[..., :1])
+    has_ahead = ~np.isnan(ahead[..., :1])
+    has_back = ~np.isnan(back[..., :1])
+    one_side = np.float32(reach / fps)   # seconds between this frame and 'reach' frames away
 
-    angles = np.linspace(0, 2 * np.pi, 60)
-    lines.append([(CENTRE_CIRCLE * np.cos(a), CENTRE_CIRCLE * np.sin(a)) for a in angles])
-    return lines
+    with np.errstate(invalid="ignore"):
+        both = (ahead - back) / (2 * one_side)
+        forward = (ahead - xy) / one_side
+        backward = (xy - back) / one_side
+    speed = np.where(has_ahead & has_back, both,
+                     np.where(has_ahead & here, forward,
+                              np.where(has_back & here, backward, 0.0)))
+    speed = np.nan_to_num(speed).astype(np.float32)
+
+    size = np.linalg.norm(speed, axis=-1, keepdims=True)
+    too_fast = size > top_speed
+    return np.where(too_fast, speed * top_speed / np.maximum(size, 1e-9), speed).astype(np.float32)

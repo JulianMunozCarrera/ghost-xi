@@ -245,7 +245,7 @@ footer { margin-top: 64px; border-top: 1px solid var(--rail); padding: 22px 0 40
   <h2>How it works</h2>
   <p class="sub">The idea comes from pro analytics, where it is called ghosting. Coaches use it to ask whether a goal was bad luck or bad positioning.</p>
   <div class="steps">
-    <article><h3>Watch</h3><p>The model studied <b id="trainMoments">thousands of</b> moments from three pro matches. For each one it saw where the ball and every player was, <b>25 times a second</b>.</p></article>
+    <article><h3>Watch</h3><p>The model studied <b id="trainMoments">thousands of</b> moments from <b>23 pro matches</b>. Three were tracked in the stadium. Twenty were tracked from the normal TV broadcast, where only part of the pitch is on screen.</p></article>
     <article><h3>Hide and guess</h3><p>In training we hide a defender and ask: he stood here a few seconds ago, the play went like this, where is he now? The model guesses. We show it the truth. Repeat <b id="trainSteps">many</b> times.</p></article>
     <article><h3>Compare</h3><p>On a new goal, the guess is the <b>ghost</b>. A defender far from his ghost did something an average pro would not have done. That is where to look first.</p></article>
   </div>
@@ -253,7 +253,7 @@ footer { margin-top: 64px; border-top: 1px solid var(--rail); padding: 22px 0 40
 
 <section class="read" id="results">
   <h2>Does it work?</h2>
-  <p class="sub">Every number below is from a match the model had never seen. With only three matches to learn from, that was done by training on two and testing on the third, three times over.</p>
+  <p class="sub">Every number below is from a match the model had never seen. The 23 matches were split into 4 groups. The model was trained 4 times, each time with one group left out, and tested on the group it did not see.</p>
   <div class="results">
     <div class="figure">
       <h3>How far the ghost lands from where the real defender went</h3>
@@ -265,23 +265,24 @@ footer { margin-top: 64px; border-top: 1px solid var(--rail); padding: 22px 0 40
   <div class="tablebox">
     <table id="groups"></table>
   </div>
+  <p class="sub" id="verdict" style="margin-top:16px"></p>
 </section>
 
 <section class="read" id="limits">
   <h2>What it cannot do yet</h2>
   <p class="sub">Read these before trusting a ghost.</p>
   <ul class="limits">
-    <li><b>It learned from three matches.</b> That is very little. Clubs train this kind of model on hundreds. More data would make the ghosts sharper.</li>
+    <li><b>It learned from 23 matches.</b> That is still little. Clubs train this kind of model on hundreds. More data would make the ghosts sharper.</li>
     <li><b>A ghost is the average pro, not the perfect one.</b> Far from the ghost means unusual. It does not always mean wrong. A press or an offside trap looks unusual too.</li>
     <li><b>It was trained on open play.</b> Corners and free kicks are a different game. The page marks goals that start from a corner.</li>
-    <li><b>It does not find players in video.</b> The goals here were tracked from TV by someone else. My own camera stage is tested with a pretend camera, not real footage.</li>
-    <li><b>The TV tracking is rough.</b> Its makers say it was built for animations. Small distances in those clips mean little.</li>
+    <li><b>It does not find players in video.</b> The matches and goals here were tracked from TV by other people (SkillCorner and Last Row). My own camera stage is tested with a pretend camera, not real footage.</li>
+    <li><b>The goal clips are rough.</b> Their makers say the tracking was built for animations. Small distances in those clips mean little.</li>
     <li><b>The danger score is simple.</b> It only asks who reaches each spot first. It knows nothing about the ball, passing lanes or who the striker is.</li>
   </ul>
 </section>
 
 <footer>
-  <div>Data: <a href="https://github.com/metrica-sports/sample-data">Metrica Sports sample data</a> for training and testing. <a href="https://github.com/Friends-of-Tracking-Data-FoTD/Last-Row">Last Row</a> (Ricardo Tavares) for the 19 Liverpool goals tracked from TV.</div>
+  <div>Data: <a href="https://github.com/metrica-sports/sample-data">Metrica Sports sample data</a> and <a href="https://github.com/SkillCorner/opendata">SkillCorner open data</a> for training and testing. <a href="https://github.com/Friends-of-Tracking-Data-FoTD/Last-Row">Last Row</a> (Ricardo Tavares) for the 19 Liverpool goals tracked from TV.</div>
   <div>Ideas: ghosting from Le, Carr, Yue and Lucey (2017). Space control from Spearman (2018).</div>
   <div>Built by Julian Munoz. <span id="speedLine"></span></div>
 </footer>

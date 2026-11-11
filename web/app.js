@@ -385,7 +385,8 @@
       const facts = [];
       facts.push(`<article><div class="big"><em>${five.all_hidden.model.toFixed(1)} m</em></div><p>Average miss when guessing 5 seconds ahead. The best simple rule, <b>move with the ball</b>, misses by ${five.all_hidden.follow_ball.toFixed(1)} m.</p></article>`);
       facts.push(`<article><div class="big">${five.one_hidden.model.toFixed(1)} m <span style="font-size:.5em;color:var(--mist)">vs</span> ${five.one_hidden.copy_teammates.toFixed(1)} m</div><p>One defender hidden, 5 seconds ahead. Ghost XI against the rule <b>move like your teammates</b>.</p></article>`);
-      facts.push(`<article><div class="big">${five.all_hidden_tv_view.model.toFixed(1)} m</div><p>The same test with <b>1 to 6 players missing</b>, like a TV camera that does not show everyone.</p></article>`);
+      const tv = R.model.by_source.tv_tracking["5"].all_hidden, stadium = R.model.by_source.stadium_tracking["5"].all_hidden;
+      facts.push(`<article><div class="big">${tv.model.toFixed(1)} m <span style="font-size:.5em;color:var(--mist)">and</span> ${stadium.model.toFixed(1)} m</div><p>The same 5 second test on the <b>${R.model.tv_matches} matches tracked from TV</b>, where part of the pitch is off screen, and on the ${R.model.stadium_matches} tracked in the stadium.</p></article>`);
       if (R.camera) facts.push(`<article><div class="big">${R.camera.position_error_m.typical.toFixed(2)} m</div><p>Typical position error after going <b>pitch to pixels and back</b> through a pretend TV camera, with ${R.camera.players_in_picture_out_of_22} of 22 players in the picture on average.</p></article>`);
       facts.push(`<article><div class="big">${R.model.parameters.toLocaleString("en-US")}</div><p>Numbers inside the model. Small enough to run in this page. <b id="speedFact"></b></p></article>`);
       $("facts").innerHTML = facts.join("");
@@ -394,14 +395,22 @@
     }
     if (R.goals) {
       const g = R.goals.groups;
-      const rows = [["ordinary", "Ordinary moments near goal"], ["shot", "Shots that did not go in"], ["goal", "Goals"], ["tv_goal", "Goals tracked from TV"]];
+      const rows = [["ordinary", "Ordinary moments near goal"], ["shot", "Shots that did not go in"], ["goal", "Goals"], ["tv_goal", "Liverpool goals (other data source)"]];
       let html = "<thead><tr><th>At this kind of moment</th><th>How many</th><th>Average defender is off by</th><th>Worst defender is off by</th><th>Space won by attack, real</th><th>Space won by attack, ghosts</th></tr></thead><tbody>";
       for (const [key, name] of rows) {
         const x = g[key]; if (!x || !x.count) continue;
         html += `<tr><td>${name}</td><td>${x.count}</td><td>${x.off_by_m.mean.toFixed(1)} m</td><td class="hi">${x.worst_off_by_m.mean.toFixed(1)} m</td><td>${Math.round(x.danger_real.mean * 100)}%</td><td>${Math.round(x.danger_ghost.mean * 100)}%</td></tr>`;
       }
-      html += "</tbody><caption>Ghosts start 8 seconds before each moment. The first three rows are from matches the model did not train on. The TV goals come from a different data source, so they are new to the model as well. There are few goals, so read the goal rows as a hint and not as proof.</caption>";
+      html += "</tbody><caption>Ghosts start 8 seconds before each moment. The first three rows are from matches the model did not train on. The Liverpool goals come from a different data source, so they are new to the model as well. The space numbers are not comparable between rows: TV tracking shows fewer players, and fewer players on screen changes the number.</caption>";
       $("groups").innerHTML = html;
+      // Say plainly what the table shows, using the numbers themselves.
+      if (g.goal && g.goal.count && g.ordinary && g.ordinary.count) {
+        const goalGap = g.goal.off_by_m, plainGap = g.ordinary.off_by_m;
+        const apart = goalGap.low > plainGap.high || goalGap.high < plainGap.low;
+        $("verdict").innerHTML = apart
+          ? `<b>What this shows.</b> Before a goal, defenders are ${goalGap.mean.toFixed(1)} m from their ghosts on average. At an ordinary moment it is ${plainGap.mean.toFixed(1)} m. That gap is bigger than chance would explain.`
+          : `<b>What this shows, honestly.</b> Before a goal, defenders are ${goalGap.mean.toFixed(1)} m from their ghosts on average. At an ordinary moment it is ${plainGap.mean.toFixed(1)} m. That is too close to call a difference. The ghost defense also gives up about as much space as the real one. So a defender far from his ghost did something <b>unusual</b>. On its own that does not mean he made a <b>mistake</b>.`;
+      }
     }
   }
 

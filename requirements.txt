@@ -1,6 +1,6 @@
 numpy
 pandas
 scipy
-torch
-opencv-python-headless
 pytest
+# only needed to train the model yourself:
+torch

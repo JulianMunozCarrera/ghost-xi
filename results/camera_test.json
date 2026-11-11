@@ -1,0 +1,23 @@
+{
+  "minutes_of_play": 15.0,
+  "pictures": 11250,
+  "pictures_we_could_map": 0.927,
+  "players_in_picture_out_of_22": 13.9,
+  "position_error_m_before_smoothing": {
+    "typical": 0.36,
+    "bad_case_95": 1.25
+  },
+  "position_error_m": {
+    "typical": 0.25,
+    "bad_case_95": 0.85
+  },
+  "ghost_test": {
+    "seconds_between_then_and_now": 2.96,
+    "players_in_picture_at_both_moments_who_kept_their_number": 0.948,
+    "defenders_we_could_ghost": 0.56,
+    "ghost_miss_m_with_perfect_data": 2.34,
+    "ghost_miss_m_with_camera_data": 3.36,
+    "ghost_moved_by_m_because_of_camera": 2.16,
+    "defenders_checked": 1978
+  }
+}
